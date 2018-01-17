@@ -43,7 +43,6 @@ abstract class ObligationBaseFlow extends FlowLogic<SignedTransaction> {
         if (obligations.size() != 1) {
             throw new FlowException(String.format("Obligation with id %s not found.", linearId));
         }
-        TwoPartyDealFlow
         return obligations.get(0);
     }
 

@@ -1,5 +1,8 @@
 package com.cts.etf.api;
 
+import com.cts.common.ApplicationPlugin;
+import com.cts.etf.flows.IssueSecurityBasketFlow;
+import com.google.common.collect.ImmutableMap;
 import net.corda.core.contracts.Amount;
 import net.corda.core.identity.Party;
 import net.corda.core.messaging.CordaRPCOps;
@@ -9,15 +12,21 @@ import net.corda.examples.obligation.flows.IssueObligation;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Currency;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import static java.util.stream.Collectors.toList;
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 import static javax.ws.rs.core.Response.Status.CREATED;
 
-public class SecurityBasketApi {
+@Path("security-basket")
+public class SecurityBasketApi implements ApplicationPlugin {
 
     private final CordaRPCOps rpcOps;
     private final Party myIdentity;
@@ -28,8 +37,26 @@ public class SecurityBasketApi {
     }
 
     @GET
-    @Path("issue-security-basket")
-    public Response issueObligation(
+    @Path("me")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, Party> me() {
+        return ImmutableMap.of("AP Party", myIdentity);
+    }
+
+    @GET
+    @Path("peers")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, List<String>> peers() {
+        return ImmutableMap.of("peers with AP", rpcOps.networkMapSnapshot()
+                .stream()
+                .filter(nodeInfo -> nodeInfo.getLegalIdentities().get(0) != myIdentity)
+                .map(it -> it.getLegalIdentities().get(0).getName().getOrganisation())
+                .collect(toList()));
+    }
+
+    @GET
+    @Path("issue")
+    public Response issueSecurityBasket(
             @QueryParam(value = "basketIpfsHash") String basketIpfsHash,
             @QueryParam(value = "party") String party) {
 
@@ -47,8 +74,8 @@ public class SecurityBasketApi {
         // 3. Start the IssueObligation flow. We block and wait for the flow to return.
         try {
             final FlowHandle<SignedTransaction> flowHandle = rpcOps.startFlowDynamic(
-                    IssueObligation.Initiator.class,
-                    issueAmount, lenderIdentity, true
+                    IssueSecurityBasketFlow.Initiator.class,
+                    basketIpfsHash, lenderIdentity, true
             );
 
             final SignedTransaction result = flowHandle.getReturnValue().get();

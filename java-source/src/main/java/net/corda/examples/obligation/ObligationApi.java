@@ -1,5 +1,6 @@
 package net.corda.examples.obligation;
 
+import com.cts.common.ApplicationPlugin;
 import com.google.common.collect.ImmutableMap;
 import net.corda.core.contracts.Amount;
 import net.corda.core.contracts.StateAndRef;
@@ -33,7 +34,7 @@ import static javax.ws.rs.core.Response.Status.CREATED;
 import static net.corda.finance.contracts.GetBalances.getCashBalances;
 
 @Path("obligation")
-public class ObligationApi {
+public class ObligationApi implements ApplicationPlugin {
     private final CordaRPCOps rpcOps;
     private final Party myIdentity;
 

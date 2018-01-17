@@ -1,4 +1,4 @@
-package net.corda.examples.obligation;
+package com.cts.etf;
 
 import com.cts.etf.api.SecurityBasketApi;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-public class ObligationPlugin implements WebServerPluginRegistry {
+public class EtfPlugin implements WebServerPluginRegistry {
     private final List<Function<CordaRPCOps, ?>> webApis = ImmutableList.of(SecurityBasketApi::new);
 
     private final Map<String, String> staticServeDirs = ImmutableMap.of(

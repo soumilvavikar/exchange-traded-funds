@@ -15,7 +15,9 @@ import net.corda.core.utilities.ProgressTracker;
 import java.security.PublicKey;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
 public class IssueEtfFlow {
@@ -32,7 +34,7 @@ public class IssueEtfFlow {
 		private final Party owner;
 
 		// Constructor
-		public Initiator(String etfName,String etfCode, int
+		public Initiator(String etfName, String etfCode, int
 				numberOfEtf, Party buyer, Party owner,
 				Boolean
 						anonymous) {
@@ -81,7 +83,10 @@ public class IssueEtfFlow {
 			// Step 4. Finalise the transaction.
 			logger.info("FINALISING");
 			progressTracker.setCurrentStep(FINALISING);
-			return subFlow(new FinalityFlow(ptx, FINALISING.childProgressTracker()));
+			Set<Party> recordTransactions = new HashSet<>();
+			recordTransactions.add(getFirstNotary());
+			return subFlow(new FinalityFlow(ptx, recordTransactions, FINALISING
+					.childProgressTracker()));
 		}
 
 		@Suspendable
@@ -94,11 +99,16 @@ public class IssueEtfFlow {
 						txKeys = subFlow(new SwapIdentitiesFlow(owner));
 
 				if (txKeys.size() != 2) {
-					throw new IllegalStateException("Something went wrong when generating confidential identities.");
-				} else if (!txKeys.containsKey(getOurIdentity())) {
-					throw new FlowException("Couldn't create our conf. identity.");
-				} else if (!txKeys.containsKey(owner)) {
-					throw new FlowException("Couldn't create lender's conf. identity.");
+					throw new IllegalStateException(
+							"Something went wrong when generating confidential identities.");
+				}
+				else if (!txKeys.containsKey(getOurIdentity())) {
+					throw new FlowException(
+							"Couldn't create our conf. identity.");
+				}
+				else if (!txKeys.containsKey(owner)) {
+					throw new FlowException(
+							"Couldn't create lender's conf. identity.");
 				}
 
 				final AnonymousParty anonymousMe = txKeys.get(getOurIdentity());

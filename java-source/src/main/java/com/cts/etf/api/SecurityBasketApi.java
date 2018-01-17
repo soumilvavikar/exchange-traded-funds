@@ -41,24 +41,6 @@ public class SecurityBasketApi implements ApplicationPlugin {
     }
 
     @GET
-    @Path("me")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, Party> me() {
-        return ImmutableMap.of("AP Party", myIdentity);
-    }
-
-    @GET
-    @Path("peers")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, List<String>> peers() {
-        return ImmutableMap.of("peers with AP", rpcOps.networkMapSnapshot()
-                .stream()
-                .filter(nodeInfo -> nodeInfo.getLegalIdentities().get(0) != myIdentity)
-                .map(it -> it.getLegalIdentities().get(0).getName().getOrganisation())
-                .collect(toList()));
-    }
-
-    @GET
     @Path("get")
     @Produces(MediaType.APPLICATION_JSON)
     public List<StateAndRef<SecurityBasket>> securityBaskets() {

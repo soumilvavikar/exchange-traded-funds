@@ -2,9 +2,7 @@ package com.cts.etf.api;
 
 import com.cts.common.ApplicationPlugin;
 import com.cts.etf.ExchangeTradedFund;
-import com.cts.etf.SecurityBasket;
 import com.cts.etf.flows.IssueEtfFlow;
-import net.corda.core.contracts.Amount;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.identity.Party;
 import net.corda.core.messaging.CordaRPCOps;
@@ -17,9 +15,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.Currency;
 import java.util.List;
-import java.util.Set;
 import java.util.logging.Logger;
 
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
@@ -40,7 +36,7 @@ public class EtfApi implements ApplicationPlugin {
 	@GET
 	@Path("get")
 	@Produces(MediaType.APPLICATION_JSON)
-	public List<StateAndRef<ExchangeTradedFund>> securityBaskets() {
+	public List<StateAndRef<ExchangeTradedFund>> getEtfs() {
 		return rpcOps.vaultQuery(ExchangeTradedFund.class).getStates();
 	}
 
@@ -49,7 +45,7 @@ public class EtfApi implements ApplicationPlugin {
 	public Response selfIssueEtf(
 			@QueryParam(value = "etfName") String etfName,
 			@QueryParam(value = "quantity") int quantity,
-				@QueryParam(value = "etfCode") String etfCode) {
+			@QueryParam(value = "etfCode") String etfCode) {
 
 		logger.info("Calling the GET API - etf/issue");
 

@@ -1,11 +1,10 @@
 package com.cts.etf.flows;
 
 import co.paralleluniverse.fibers.Suspendable;
-import com.cts.etf.ETFContract;
+import com.cts.etf.contracts.ETFContract;
 import com.cts.etf.ExchangeTradedFund;
 import com.cts.etf.api.EtfApi;
 import net.corda.confidential.SwapIdentitiesFlow;
-import net.corda.core.contracts.Amount;
 import net.corda.core.flows.*;
 import net.corda.core.identity.AnonymousParty;
 import net.corda.core.identity.Party;
@@ -15,9 +14,10 @@ import net.corda.core.utilities.ProgressTracker;
 
 import java.security.PublicKey;
 import java.time.Duration;
-import java.util.Currency;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
 public class IssueEtfFlow {
@@ -27,19 +27,19 @@ public class IssueEtfFlow {
 		private static final Logger logger =
 				Logger.getLogger(EtfApi.class.toString());
 		private final String etfName;
-		private final Amount<Currency> etfValue;
+		private final String etfCode;
 		private final int quantityOfEtf;
 		private final Boolean anonymous;
 		private final Party buyer;
 		private final Party owner;
 
 		// Constructor
-		public Initiator(String etfName, Amount<Currency> etfValue, int
+		public Initiator(String etfName, String etfCode, int
 				numberOfEtf, Party buyer, Party owner,
 				Boolean
 						anonymous) {
 			this.etfName = etfName;
-			this.etfValue = etfValue;
+			this.etfCode = etfCode;
 			this.quantityOfEtf = numberOfEtf;
 			this.anonymous = anonymous;
 			this.buyer = buyer;
@@ -83,7 +83,10 @@ public class IssueEtfFlow {
 			// Step 4. Finalise the transaction.
 			logger.info("FINALISING");
 			progressTracker.setCurrentStep(FINALISING);
-			return subFlow(new FinalityFlow(ptx, FINALISING.childProgressTracker()));
+			Set<Party> recordTransactions = new HashSet<>();
+			recordTransactions.add(getFirstNotary());
+			return subFlow(new FinalityFlow(ptx, recordTransactions, FINALISING
+					.childProgressTracker()));
 		}
 
 		@Suspendable
@@ -96,19 +99,24 @@ public class IssueEtfFlow {
 						txKeys = subFlow(new SwapIdentitiesFlow(owner));
 
 				if (txKeys.size() != 2) {
-					throw new IllegalStateException("Something went wrong when generating confidential identities.");
-				} else if (!txKeys.containsKey(getOurIdentity())) {
-					throw new FlowException("Couldn't create our conf. identity.");
-				} else if (!txKeys.containsKey(owner)) {
-					throw new FlowException("Couldn't create lender's conf. identity.");
+					throw new IllegalStateException(
+							"Something went wrong when generating confidential identities.");
+				}
+				else if (!txKeys.containsKey(getOurIdentity())) {
+					throw new FlowException(
+							"Couldn't create our conf. identity.");
+				}
+				else if (!txKeys.containsKey(owner)) {
+					throw new FlowException(
+							"Couldn't create lender's conf. identity.");
 				}
 
 				final AnonymousParty anonymousMe = txKeys.get(getOurIdentity());
 				final AnonymousParty anonymousLender = txKeys.get(owner);
-				return new ExchangeTradedFund(etfValue, owner, buyer,
+				return new ExchangeTradedFund(etfCode, owner, buyer,
 						etfName, quantityOfEtf);
 			}
-			return new ExchangeTradedFund(etfValue, owner, buyer,
+			return new ExchangeTradedFund(etfCode, owner, buyer,
 					etfName, quantityOfEtf);
 		}
 

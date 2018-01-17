@@ -18,118 +18,151 @@ import net.corda.examples.obligation.ObligationContract;
 import java.security.PublicKey;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class IssueSecurityBasketFlow {
-    @InitiatingFlow
-    @StartableByRPC
-    public static class Initiator extends EtfBaseFlow {
+	@InitiatingFlow
+	@StartableByRPC
+	public static class Initiator extends EtfBaseFlow {
 
-        private final String basketIpfsHash;
-        private final Party lender;
-        private final Boolean anonymous;
+		private final String basketIpfsHash;
+		private final Party lender;
+		private final Boolean anonymous;
 
-        private final ProgressTracker.Step INITIALISING = new ProgressTracker.Step("Performing initial steps.");
-        private final ProgressTracker.Step BUILDING = new ProgressTracker.Step("Performing initial steps.");
-        private final ProgressTracker.Step SIGNING = new ProgressTracker.Step("Signing transaction.");
-        private final ProgressTracker.Step COLLECTING = new ProgressTracker.Step("Collecting counterparty signature.") {
-            @Override public ProgressTracker childProgressTracker() {
-                return CollectSignaturesFlow.Companion.tracker();
-            }
-        };
-        private final ProgressTracker.Step FINALISING = new ProgressTracker.Step("Finalising transaction.") {
-            @Override public ProgressTracker childProgressTracker() {
-                return FinalityFlow.Companion.tracker();
-            }
-        };
+		private final ProgressTracker.Step INITIALISING =
+				new ProgressTracker.Step("Performing initial steps.");
+		private final ProgressTracker.Step BUILDING =
+				new ProgressTracker.Step("Performing initial steps.");
+		private final ProgressTracker.Step SIGNING =
+				new ProgressTracker.Step("Signing transaction.");
+		private final ProgressTracker.Step COLLECTING =
+				new ProgressTracker.Step("Collecting counterparty signature.") {
+					@Override
+					public ProgressTracker childProgressTracker() {
+						return CollectSignaturesFlow.Companion.tracker();
+					}
+				};
+		private final ProgressTracker.Step FINALISING =
+				new ProgressTracker.Step("Finalising transaction.") {
+					@Override
+					public ProgressTracker childProgressTracker() {
+						return FinalityFlow.Companion.tracker();
+					}
+				};
 
-        private final ProgressTracker progressTracker = new ProgressTracker(
-                INITIALISING, BUILDING, SIGNING, COLLECTING, FINALISING
-        );
+		private final ProgressTracker progressTracker = new ProgressTracker(
+				INITIALISING, BUILDING, SIGNING, COLLECTING, FINALISING
+		);
 
-        public Initiator(String basketIpfsHash, Party lender, Boolean anonymous) {
-            this.basketIpfsHash = basketIpfsHash;
-            this.lender = lender;
-            this.anonymous = anonymous;
-        }
+		public Initiator(String basketIpfsHash,
+				Party lender,
+				Boolean anonymous) {
+			this.basketIpfsHash = basketIpfsHash;
+			this.lender = lender;
+			this.anonymous = anonymous;
+		}
 
-        @Override
-        public ProgressTracker getProgressTracker() {
-            return progressTracker;
-        }
+		@Override
+		public ProgressTracker getProgressTracker() {
+			return progressTracker;
+		}
 
-        @Suspendable
-        @Override
-        public SignedTransaction call() throws FlowException {
-            // Step 1. Initialisation.
-            progressTracker.setCurrentStep(INITIALISING);
-            final SecurityBasket securityBasket = createSecurityBasket();
-            final PublicKey ourSigningKey = securityBasket.getBorrower().getOwningKey();
+		@Suspendable
+		@Override
+		public SignedTransaction call() throws FlowException {
+			// Step 1. Initialisation.
+			progressTracker.setCurrentStep(INITIALISING);
+			final SecurityBasket securityBasket = createSecurityBasket();
+			final PublicKey ourSigningKey =
+					securityBasket.getBorrower().getOwningKey();
 
-            // Step 2. Building.
-            progressTracker.setCurrentStep(BUILDING);
-            final List<PublicKey> requiredSigners = securityBasket.getParticipantKeys();
+			// Step 2. Building.
+			progressTracker.setCurrentStep(BUILDING);
+			final List<PublicKey> requiredSigners =
+					securityBasket.getParticipantKeys();
 
-            final TransactionBuilder utx = new TransactionBuilder(getFirstNotary())
-                    .addOutputState(securityBasket, SecurityBasketContract.SECURITY_BASKET_CONTRACT_ID)
-                    .addCommand(new SecurityBasketContract.Commands.Issue(), requiredSigners)
-                    .setTimeWindow(getServiceHub().getClock().instant(), Duration.ofSeconds(30));
+			final TransactionBuilder utx =
+					new TransactionBuilder(getFirstNotary())
+							.addOutputState(securityBasket,
+									SecurityBasketContract.SECURITY_BASKET_CONTRACT_ID)
+							.addCommand(
+									new SecurityBasketContract.Commands.Issue(),
+									requiredSigners)
+							.setTimeWindow(getServiceHub().getClock().instant(),
+									Duration.ofSeconds(30));
 
-            // Step 3. Sign the transaction.
-            progressTracker.setCurrentStep(SIGNING);
-            final SignedTransaction ptx = getServiceHub().signInitialTransaction(utx, ourSigningKey);
+			// Step 3. Sign the transaction.
+			progressTracker.setCurrentStep(SIGNING);
+			final SignedTransaction ptx =
+					getServiceHub().signInitialTransaction(utx, ourSigningKey);
 
-            // Step 4. Get the counter-party signature.
-            progressTracker.setCurrentStep(COLLECTING);
-            final FlowSession lenderFlow = initiateFlow(lender);
-            final SignedTransaction stx = subFlow(new CollectSignaturesFlow(
-                    ptx,
-                    ImmutableSet.of(lenderFlow),
-                    ImmutableList.of(ourSigningKey),
-                    COLLECTING.childProgressTracker())
-            );
+			// Step 4. Get the counter-party signature.
+			progressTracker.setCurrentStep(COLLECTING);
+			final FlowSession lenderFlow = initiateFlow(lender);
+			final SignedTransaction stx = subFlow(new CollectSignaturesFlow(
+					ptx,
+					ImmutableSet.of(lenderFlow),
+					ImmutableList.of(ourSigningKey),
+					COLLECTING.childProgressTracker())
+			);
 
-            // Step 5. Finalise the transaction.
-            progressTracker.setCurrentStep(FINALISING);
-            return subFlow(new FinalityFlow(stx, FINALISING.childProgressTracker()));
-        }
+			// Step 5. Finalise the transaction.
+			progressTracker.setCurrentStep(FINALISING);
+			Set<Party> recordTransactions = new HashSet<>();
+			recordTransactions.add(getFirstNotary());
+			return subFlow(new FinalityFlow(stx, recordTransactions,
+					FINALISING.childProgressTracker()));
+		}
 
-        @Suspendable
-        private SecurityBasket createSecurityBasket() throws FlowException {
-            if (anonymous) {
-                final HashMap<Party, AnonymousParty> txKeys = subFlow(new SwapIdentitiesFlow(lender));
+		@Suspendable
+		private SecurityBasket createSecurityBasket() throws FlowException {
+			if (anonymous) {
+				final HashMap<Party, AnonymousParty> txKeys =
+						subFlow(new SwapIdentitiesFlow(lender));
 
-                if (txKeys.size() != 2) {
-                    throw new IllegalStateException("Something went wrong when generating confidential identities.");
-                } else if (!txKeys.containsKey(getOurIdentity())) {
-                    throw new FlowException("Couldn't create our conf. identity.");
-                } else if (!txKeys.containsKey(lender)) {
-                    throw new FlowException("Couldn't create lender's conf. identity.");
-                }
+				if (txKeys.size() != 2) {
+					throw new IllegalStateException(
+							"Something went wrong when generating confidential identities.");
+				}
+				else if (!txKeys.containsKey(getOurIdentity())) {
+					throw new FlowException(
+							"Couldn't create our conf. identity.");
+				}
+				else if (!txKeys.containsKey(lender)) {
+					throw new FlowException(
+							"Couldn't create lender's conf. identity.");
+				}
 
-                final AnonymousParty anonymousMe = txKeys.get(getOurIdentity());
-                final AnonymousParty anonymousLender = txKeys.get(lender);
+				final AnonymousParty anonymousMe = txKeys.get(getOurIdentity());
+				final AnonymousParty anonymousLender = txKeys.get(lender);
 
-                return new SecurityBasket(basketIpfsHash, anonymousLender, anonymousMe);
-            } else {
-                return new SecurityBasket(basketIpfsHash, lender, getOurIdentity());
-            }
-        }
-    }
+				return new SecurityBasket(basketIpfsHash, anonymousLender,
+						anonymousMe);
+			}
+			else {
+				return new SecurityBasket(basketIpfsHash, lender,
+						getOurIdentity());
+			}
+		}
+	}
 
-    @InitiatedBy(IssueSecurityBasketFlow.Initiator.class)
-    public static class Responder extends FlowLogic<SignedTransaction> {
-        private final FlowSession otherFlow;
+	@InitiatedBy(IssueSecurityBasketFlow.Initiator.class)
+	public static class Responder extends FlowLogic<SignedTransaction> {
+		private final FlowSession otherFlow;
 
-        public Responder(FlowSession otherFlow) {
-            this.otherFlow = otherFlow;
-        }
+		public Responder(FlowSession otherFlow) {
+			this.otherFlow = otherFlow;
+		}
 
-        @Suspendable
-        @Override
-        public SignedTransaction call() throws FlowException {
-            final SignedTransaction stx = subFlow(new EtfBaseFlow.SignTxFlowNoChecking(otherFlow, SignTransactionFlow.Companion.tracker()));
-            return waitForLedgerCommit(stx.getId());
-        }
-    }
+		@Suspendable
+		@Override
+		public SignedTransaction call() throws FlowException {
+			final SignedTransaction stx =
+					subFlow(new EtfBaseFlow.SignTxFlowNoChecking(otherFlow,
+							SignTransactionFlow.Companion.tracker()));
+			return waitForLedgerCommit(stx.getId());
+		}
+	}
 }

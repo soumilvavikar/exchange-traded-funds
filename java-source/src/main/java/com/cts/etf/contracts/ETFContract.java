@@ -1,5 +1,6 @@
-package com.cts.etf;
+package com.cts.etf.contracts;
 
+import com.cts.etf.ExchangeTradedFund;
 import net.corda.core.contracts.CommandData;
 import net.corda.core.contracts.CommandWithParties;
 import net.corda.core.contracts.Contract;
@@ -17,7 +18,7 @@ import static net.corda.core.contracts.ContractsDSL.requireThat;
 
 public class ETFContract implements Contract {
 	public static final String ETF_CONTRACT_ID =
-			"com.cts.etf.ETFContract";
+			"com.cts.etf.contracts.ETFContract";
 
 	public interface Commands extends CommandData {
 		class SelfIssue extends TypeOnlyCommandData
@@ -47,10 +48,6 @@ public class ETFContract implements Contract {
 		if (commandData instanceof ETFContract.Commands.SelfIssue) {
 			verifySelfIssue(tx, setOfSigners);
 		}
-		else if (commandData instanceof ETFContract.Commands.Issue) {
-			// TODO
-			//verifyIssue(tx, setOfSigners);
-		}
 		else if (commandData instanceof ETFContract.Commands.Transfer) {
 			// TODO
 			// verifyTransfer(tx, setOfSigners);
@@ -74,14 +71,6 @@ public class ETFContract implements Contract {
 	private void verifySelfIssue(LedgerTransaction tx,
 			Set<PublicKey> signers) {
 		requireThat(req -> {
-			return null;
-		});
-	}
-
-	// This only allows one obligation issuance per transaction.
-	private void verifyIssue(LedgerTransaction tx, Set<PublicKey> signers) {
-		requireThat(req -> {
-
 			return null;
 		});
 	}

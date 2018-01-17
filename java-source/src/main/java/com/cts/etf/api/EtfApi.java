@@ -36,23 +36,16 @@ public class EtfApi implements ApplicationPlugin {
 	public Response selfIssueEtf(
 			@QueryParam(value = "etfName") String etfName,
 			@QueryParam(value = "quantity") int quantity,
-			@QueryParam(value = "etfAmount") long amount,
-			@QueryParam(value = "currency") String currency) {
+				@QueryParam(value = "etfCode") String etfCode) {
 
 		logger.info("Calling the GET API - etf/issue");
 
-		// 2. Create an amount object.
-		final Amount etfAmount = new Amount<>((long) amount * 100, Currency
-				.getInstance(currency));
-		logger.info("etfAmount object created.");
-
-		// 3. Start the IssueEtf flow. We block and wait for the flow to return.
 		try {
 			logger.info("Calling rpcOps.startFlowDynamic");
 			final FlowHandle<SignedTransaction> flowHandle =
 					rpcOps.startFlowDynamic(
 							IssueEtfFlow.Initiator.class, etfName,
-							etfAmount, quantity, this.myIdentity,
+							etfCode, quantity, this.myIdentity,
 							this.myIdentity,
 							false
 					);

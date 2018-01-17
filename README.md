@@ -1,4 +1,5 @@
 # exchange-traded-funds
 
 
-isseETF - http://localhost:10007/api/etf/issue?etfName=dummyEtf1&quantity=10&etfAmount=1500&currency=USD
+issueETF
+http://localhost:10010/api/etf/issue?etfName=GlobalFinancialsETF&quantity=10&etfCode=etf123

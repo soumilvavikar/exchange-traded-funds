@@ -14,18 +14,18 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class ExchangeTradedFund implements LinearState {
-	private final Amount<Currency> amount;
+	private final String etfCode;
 	private final AbstractParty owner;
 	private final AbstractParty buyer;
 	private final UniqueIdentifier linearId;
 	private final String etfName;
 	private final int quantity;
 
-	public ExchangeTradedFund(Amount<Currency> amount,
+	public ExchangeTradedFund(String etfCode,
 			AbstractParty owner,
 			AbstractParty buyer,
 			UniqueIdentifier linearId, String etfName, int quantity) {
-		this.amount = amount;
+		this.etfCode = etfCode;
 		this.owner = owner;
 		this.buyer = buyer;
 		this.linearId = linearId;
@@ -33,21 +33,58 @@ public class ExchangeTradedFund implements LinearState {
 		this.quantity = quantity;
 	}
 
-	public ExchangeTradedFund(Amount<Currency> amount,
+	@Override
+	public String toString() {
+		return "ExchangeTradedFund{" +
+				"etfCode='" + etfCode + '\'' +
+				", owner=" + owner +
+				", buyer=" + buyer +
+				", linearId=" + linearId +
+				", etfName='" + etfName + '\'' +
+				", quantity=" + quantity +
+				'}';
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+		ExchangeTradedFund that = (ExchangeTradedFund) o;
+		return quantity == that.quantity &&
+				Objects.equals(etfCode, that.etfCode) &&
+				Objects.equals(owner, that.owner) &&
+				Objects.equals(buyer, that.buyer) &&
+				Objects.equals(linearId, that.linearId) &&
+				Objects.equals(etfName, that.etfName);
+	}
+
+	@Override
+	public int hashCode() {
+
+		return Objects.hash(etfCode, owner, buyer, linearId, etfName, quantity);
+	}
+
+	public ExchangeTradedFund(String etfCode,
 			AbstractParty owner,
 			AbstractParty buyer,
 			String etfName,
 			int quantity) {
-		this.amount = amount;
+		this.etfCode = etfCode;
 		this.owner = owner;
 		this.buyer = buyer;
 		this.etfName = etfName;
 		this.quantity = quantity;
+
+
 		this.linearId = new UniqueIdentifier();
 	}
 
-	public Amount<Currency> getAmount() {
-		return amount;
+	public String getEtfCode() {
+		return etfCode;
 	}
 
 	public AbstractParty getOwner() {
@@ -64,42 +101,6 @@ public class ExchangeTradedFund implements LinearState {
 
 	public int getQuantity() {
 		return quantity;
-	}
-
-	@Override
-	public String toString() {
-		return "ExchangeTradedFund{" +
-				"amount=" + amount +
-				", owner=" + owner +
-				", buyer=" + buyer +
-				", linearId=" + linearId +
-
-				", etfName='" + etfName + '\'' +
-				", quantity=" + quantity +
-				'}';
-	}
-
-	@Override
-	public boolean equals(Object o) {
-		if (this == o) {
-			return true;
-		}
-		if (o == null || getClass() != o.getClass()) {
-			return false;
-		}
-		ExchangeTradedFund that = (ExchangeTradedFund) o;
-		return quantity == that.quantity &&
-				Objects.equals(amount, that.amount) &&
-				Objects.equals(owner, that.owner) &&
-				Objects.equals(buyer, that.buyer) &&
-				Objects.equals(linearId, that.linearId) &&
-				Objects.equals(etfName, that.etfName);
-	}
-
-	@Override
-	public int hashCode() {
-
-		return Objects.hash(amount, owner, buyer, linearId, etfName, quantity);
 	}
 
 	@NotNull

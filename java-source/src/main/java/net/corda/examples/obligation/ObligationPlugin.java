@@ -1,9 +1,6 @@
 package net.corda.examples.obligation;
 
-import com.cts.etf.api.CreateEtfApi;
-import com.cts.etf.api.EtfApi;
-import com.cts.etf.api.NotaryReviewApi;
-import com.cts.etf.api.SecurityBasketApi;
+import com.cts.etf.api.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -19,7 +16,7 @@ public class ObligationPlugin implements WebServerPluginRegistry {
 	private final List<Function<CordaRPCOps, ?>> webApis =
 			ImmutableList.of(SecurityBasketApi::new, EtfApi::new,
 					ObligationApi::new, CreateEtfApi::new,
-					NotaryReviewApi::new);
+					NotaryReviewApi::new, InfoApi::new);
 
 	private final Map<String, String> staticServeDirs = ImmutableMap.of(
 			"obligation",

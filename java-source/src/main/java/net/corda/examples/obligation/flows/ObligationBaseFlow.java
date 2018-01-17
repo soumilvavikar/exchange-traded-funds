@@ -14,6 +14,7 @@ import net.corda.core.node.services.vault.QueryCriteria;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.utilities.ProgressTracker;
 import net.corda.examples.obligation.Obligation;
+import net.corda.finance.flows.TwoPartyDealFlow;
 
 import java.util.List;
 
@@ -42,6 +43,7 @@ abstract class ObligationBaseFlow extends FlowLogic<SignedTransaction> {
         if (obligations.size() != 1) {
             throw new FlowException(String.format("Obligation with id %s not found.", linearId));
         }
+        TwoPartyDealFlow
         return obligations.get(0);
     }
 

@@ -1,50 +1,63 @@
 package com.cts.etf.api;
 
-import net.corda.core.contracts.Amount;
+import com.cts.etf.CreateEtfRequest;
+import com.cts.etf.flows.EtfCreationRequestFlow;
+import net.corda.core.contracts.StateAndRef;
 import net.corda.core.identity.Party;
+import net.corda.core.messaging.CordaRPCOps;
 import net.corda.core.messaging.FlowHandle;
 import net.corda.core.transactions.SignedTransaction;
-import net.corda.examples.obligation.flows.IssueObligation;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.Currency;
+import java.util.List;
 import java.util.Set;
 
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 import static javax.ws.rs.core.Response.Status.CREATED;
 
+@Path("etf-request")
 public class CreateEtfApi {
 
+    private final CordaRPCOps rpcOps;
+    private final Party myIdentity;
+
+    public CreateEtfApi(CordaRPCOps rpcOps) {
+        this.rpcOps = rpcOps;
+        this.myIdentity = rpcOps.nodeInfo().getLegalIdentities().get(0);
+    }
     @GET
-    @Path("create-etf")
+    @Path("create")
     public Response CreateEtf(
     @QueryParam(value = "basketIpfsHash") String basketIpfsHash,
-    @QueryParam(value = "party") String party) {
+    @QueryParam(value = "sponserer") String sponserer,
+    @QueryParam(value = "etfCode") String etfCode)
     {
 
         // 1. Get party objects for the counterparty.
-        final Set<Party> lenderIdentities = rpcOps.partiesFromName(party, false);
-        if (lenderIdentities.size() != 1) {
-            final String errMsg = String.format("Found %d identities for the lender.", lenderIdentities.size());
+        final Set<Party> borrowerIdentities = rpcOps.partiesFromName(sponserer, false);
+        if (borrowerIdentities.size() != 1) {
+            final String errMsg = String.format("Found %d identities for the lender.", borrowerIdentities.size());
             throw new IllegalStateException(errMsg);
         }
-        final Party lenderIdentity = lenderIdentities.iterator().next();
+        final Party borrowerIdentity = borrowerIdentities.iterator().next();
 
         // 2. Create an amount object.
        // final Amount issueAmount = new Amount<>((long) amount * 100, Currency.getInstance(currency));
 
         // 2. Create an ETF Request object.
-         final Amount issueAmount = new Amount<>((long) amount * 100, Currency.getInstance(currency));
+       //  final Amount issueAmount = new Amount<>((long) amount * 100, Currency.getInstance(currency));
 
 
-        // 3. Start the IssueObligation flow. We block and wait for the flow to return.
+        // 3. Start the Issue Obligation flow. We block and wait for the flow to return.
         try {
             final FlowHandle<SignedTransaction> flowHandle = rpcOps.startFlowDynamic(
-                    IssueObligation.Initiator.class,
-                    issueAmount, lenderIdentity, true
+                    EtfCreationRequestFlow.Initiator.class,
+                    basketIpfsHash,etfCode, borrowerIdentity, false
             );
 
             final SignedTransaction result = flowHandle.getReturnValue().get();
@@ -56,4 +69,10 @@ public class CreateEtfApi {
         }
     }
 
+    @GET
+    @Path("get")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<StateAndRef<CreateEtfRequest>> securityBaskets() {
+        return rpcOps.vaultQuery(CreateEtfRequest.class).getStates();
+    }
 }

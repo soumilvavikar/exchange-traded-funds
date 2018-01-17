@@ -2,6 +2,7 @@ package com.cts.etf.flows;
 
 import co.paralleluniverse.fibers.Suspendable;
 import com.cts.etf.SecurityBasket;
+import com.cts.etf.contracts.SecurityBasketContract;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import net.corda.confidential.SwapIdentitiesFlow;
@@ -70,8 +71,8 @@ public class IssueSecurityBasketFlow {
             final List<PublicKey> requiredSigners = securityBasket.getParticipantKeys();
 
             final TransactionBuilder utx = new TransactionBuilder(getFirstNotary())
-                    .addOutputState(securityBasket, ObligationContract.OBLIGATION_CONTRACT_ID)
-                    .addCommand(new ObligationContract.Commands.Issue(), requiredSigners)
+                    .addOutputState(securityBasket, SecurityBasketContract.SECURITY_BASKET_CONTRACT_ID)
+                    .addCommand(new SecurityBasketContract.Commands.Issue(), requiredSigners)
                     .setTimeWindow(getServiceHub().getClock().instant(), Duration.ofSeconds(30));
 
             // Step 3. Sign the transaction.
@@ -109,9 +110,9 @@ public class IssueSecurityBasketFlow {
                 final AnonymousParty anonymousMe = txKeys.get(getOurIdentity());
                 final AnonymousParty anonymousLender = txKeys.get(lender);
 
-                return new SecurityBasket("RANDOM_HASH", anonymousLender, anonymousMe);
+                return new SecurityBasket(basketIpfsHash, anonymousLender, anonymousMe);
             } else {
-                return new SecurityBasket("RANDOM_HASH", lender, getOurIdentity());
+                return new SecurityBasket(basketIpfsHash, lender, getOurIdentity());
             }
         }
     }

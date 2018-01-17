@@ -1,13 +1,16 @@
 package com.cts.etf.api;
 
 import com.cts.common.ApplicationPlugin;
+import com.cts.etf.SecurityBasket;
 import com.cts.etf.flows.IssueSecurityBasketFlow;
 import com.google.common.collect.ImmutableMap;
 import net.corda.core.contracts.Amount;
+import net.corda.core.contracts.StateAndRef;
 import net.corda.core.identity.Party;
 import net.corda.core.messaging.CordaRPCOps;
 import net.corda.core.messaging.FlowHandle;
 import net.corda.core.transactions.SignedTransaction;
+import net.corda.examples.obligation.Obligation;
 import net.corda.examples.obligation.flows.IssueObligation;
 
 import javax.ws.rs.GET;
@@ -55,6 +58,13 @@ public class SecurityBasketApi implements ApplicationPlugin {
     }
 
     @GET
+    @Path("get")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<StateAndRef<SecurityBasket>> securityBaskets() {
+        return rpcOps.vaultQuery(SecurityBasket.class).getStates();
+    }
+
+    @GET
     @Path("issue")
     public Response issueSecurityBasket(
             @QueryParam(value = "basketIpfsHash") String basketIpfsHash,
@@ -75,7 +85,7 @@ public class SecurityBasketApi implements ApplicationPlugin {
         try {
             final FlowHandle<SignedTransaction> flowHandle = rpcOps.startFlowDynamic(
                     IssueSecurityBasketFlow.Initiator.class,
-                    basketIpfsHash, lenderIdentity, true
+                    basketIpfsHash, myIdentity, false
             );
 
             final SignedTransaction result = flowHandle.getReturnValue().get();

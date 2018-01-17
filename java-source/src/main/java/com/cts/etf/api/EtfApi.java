@@ -1,8 +1,11 @@
 package com.cts.etf.api;
 
 import com.cts.common.ApplicationPlugin;
+import com.cts.etf.ExchangeTradedFund;
+import com.cts.etf.SecurityBasket;
 import com.cts.etf.flows.IssueEtfFlow;
 import net.corda.core.contracts.Amount;
+import net.corda.core.contracts.StateAndRef;
 import net.corda.core.identity.Party;
 import net.corda.core.messaging.CordaRPCOps;
 import net.corda.core.messaging.FlowHandle;
@@ -10,9 +13,12 @@ import net.corda.core.transactions.SignedTransaction;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Currency;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -29,6 +35,13 @@ public class EtfApi implements ApplicationPlugin {
 	public EtfApi(CordaRPCOps rpcOps) {
 		this.rpcOps = rpcOps;
 		this.myIdentity = rpcOps.nodeInfo().getLegalIdentities().get(0);
+	}
+
+	@GET
+	@Path("get")
+	@Produces(MediaType.APPLICATION_JSON)
+	public List<StateAndRef<ExchangeTradedFund>> securityBaskets() {
+		return rpcOps.vaultQuery(ExchangeTradedFund.class).getStates();
 	}
 
 	@GET

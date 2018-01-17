@@ -20,6 +20,7 @@ import static net.corda.core.utilities.EncodingUtils.toBase58String;
 
 public class SecurityBasket implements LinearState {
 
+    private final Amount<Currency> faceValue =  new Amount<>((long) 100, Currency.getInstance("INR"));
     private final String basketIpfsHash;
     private final AbstractParty lender; // AP
     private final AbstractParty borrower; // This can be thrid party place holder
@@ -50,6 +51,10 @@ public class SecurityBasket implements LinearState {
 
     public AbstractParty getBorrower() {
         return borrower;
+    }
+
+    public Amount<Currency> getFaceValue() {
+        return faceValue;
     }
 
     @Override

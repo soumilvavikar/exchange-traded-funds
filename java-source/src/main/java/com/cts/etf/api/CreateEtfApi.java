@@ -35,7 +35,8 @@ public class CreateEtfApi {
     public Response CreateEtf(
     @QueryParam(value = "basketIpfsHash") String basketIpfsHash,
     @QueryParam(value = "sponserer") String sponserer,
-    @QueryParam(value = "etfCode") String etfCode)
+    @QueryParam(value = "etfCode") String etfCode,
+    @QueryParam(value = "quantity") int quantity)
     {
 
         // 1. Get party objects for the counterparty.
@@ -57,7 +58,7 @@ public class CreateEtfApi {
         try {
             final FlowHandle<SignedTransaction> flowHandle = rpcOps.startFlowDynamic(
                     EtfCreationRequestFlow.Initiator.class,
-                    basketIpfsHash,etfCode, borrowerIdentity, false
+                    basketIpfsHash,etfCode, borrowerIdentity, quantity, false
             );
 
             final SignedTransaction result = flowHandle.getReturnValue().get();

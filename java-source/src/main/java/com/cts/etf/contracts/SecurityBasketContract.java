@@ -33,6 +33,9 @@ public class SecurityBasketContract implements Contract {
 
         class Settle extends TypeOnlyCommandData implements SecurityBasketContract.Commands {
         }
+
+        class Iou extends TypeOnlyCommandData implements SecurityBasketContract.Commands {
+        }
     }
     @Override
     public void verify(LedgerTransaction tx) {
@@ -45,6 +48,8 @@ public class SecurityBasketContract implements Contract {
             verifyTransfer(tx, setOfSigners);
         } else if (commandData instanceof SecurityBasketContract.Commands.Settle) {
             verifySettle(tx, setOfSigners);
+        } else if (commandData instanceof SecurityBasketContract.Commands.Iou) {
+            verifyIou(tx, setOfSigners);
         } else {
             throw new IllegalArgumentException("Unrecognised command.");
         }
@@ -85,6 +90,10 @@ public class SecurityBasketContract implements Contract {
                     signers.equals(Sets.union(keysFromParticipants(input), keysFromParticipants(output))));
             return null;
         });
+    }
+
+    private void verifyIou(LedgerTransaction tx, Set<PublicKey> signers) {
+
     }
 
     private void verifySettle(LedgerTransaction tx, Set<PublicKey> signers) {

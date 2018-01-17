@@ -1,42 +1,57 @@
 package com.cts.etf;
 
+import com.cts.etf.api.EtfApi;
+import com.cts.etf.contracts.CreateEtfRequestContract;
 import com.google.common.collect.ImmutableList;
+import net.corda.core.contracts.Command;
 import net.corda.core.contracts.LinearState;
+import net.corda.core.contracts.StateAndContract;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.crypto.NullKeys;
 import net.corda.core.identity.AbstractParty;
 import net.corda.core.identity.Party;
+import net.corda.core.serialization.CordaSerializable;
+import net.corda.core.transactions.TransactionBuilder;
+import net.corda.finance.contracts.DealState;
+import org.jetbrains.annotations.NotNull;
 
 import java.security.PublicKey;
 import java.util.List;
 import java.util.Objects;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static net.corda.core.utilities.EncodingUtils.toBase58String;
 
-public class CreateEtfRequest implements LinearState {
+@CordaSerializable
+public class CreateEtfRequest implements DealState {
+
+    private static final Logger logger =  Logger.getLogger(CreateEtfRequest.class.toString());
 
     private final String basketIpfsHash;
     private final AbstractParty lender; // AP (Authorized Paarticipant)
     private final AbstractParty borrower; // This can be ETF Sponsorer
     private final String etfCode;
+    private final int quantity;
     private final UniqueIdentifier linearId;
 
 
-    public CreateEtfRequest(String basketIpfsHash, String etfCode, AbstractParty lender, AbstractParty borrower, UniqueIdentifier linearId) {
+    public CreateEtfRequest(String basketIpfsHash, String etfCode, AbstractParty lender, AbstractParty borrower, int quantity, UniqueIdentifier linearId) {
         this.basketIpfsHash = basketIpfsHash;
         this.etfCode = etfCode;
         this.lender = lender;
         this.borrower = borrower;
+        this.quantity = quantity;
         this.linearId = linearId;
 
     }
 
-    public CreateEtfRequest(String basketIpfsHash, String etfCode,AbstractParty lender, AbstractParty borrower) {
+    public CreateEtfRequest(String basketIpfsHash, String etfCode, AbstractParty lender, AbstractParty borrower, int quantity) {
         this.basketIpfsHash = basketIpfsHash;
         this.etfCode = etfCode;
         this.lender = lender;
         this.borrower = borrower;
+        this.quantity = quantity;
         this.linearId = new UniqueIdentifier();
     }
 
@@ -56,6 +71,9 @@ public class CreateEtfRequest implements LinearState {
         return borrower;
     }
 
+    public int getQuantity() {
+        return quantity;
+    }
 
     @Override
     public UniqueIdentifier getLinearId() {
@@ -116,5 +134,22 @@ public class CreateEtfRequest implements LinearState {
     @Override
     public int hashCode() {
         return Objects.hash(basketIpfsHash, lender, borrower, linearId);
+    }
+
+    @NotNull
+    @Override
+    public TransactionBuilder generateAgreement(Party notary) {
+        System.out.println("In generateAgreement.... ");
+        logger.info("CreateEtfRequest.generateAgreement() call Start");
+        final TransactionBuilder utx = new TransactionBuilder(notary).withItems(
+                new StateAndContract(this, CreateEtfRequestContract.CREATE_ETF_REQUEST_CONTRACT_ID),
+                new Command(new CreateEtfRequestContract.Commands.Issue(), getParticipantKeys()));
+                /*
+                .addOutputState(createEtfRequest, CreateEtfRequestContract.CREATE_ETF_REQUEST_CONTRACT_ID)
+                .addCommand(new CreateEtfRequestContract.Commands.Issue(), requiredSigners);
+*/
+        System.out.println("In generateAgreement 213.... ");
+        logger.info("CreateEtfRequest.generateAgreement() called - " + utx.toString());
+        return utx;
     }
 }

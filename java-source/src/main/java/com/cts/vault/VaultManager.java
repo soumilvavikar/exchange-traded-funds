@@ -1,5 +1,6 @@
 package com.cts.vault;
 
+import com.cts.etf.ExchangeTradedFund;
 import com.cts.etf.SecurityBasket;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.node.services.Vault;
@@ -35,6 +36,30 @@ public class VaultManager {
         while (it.hasNext()) {
             StateAndRef<SecurityBasket> stateAndRef = it.next();
             if (stateAndRef.getState().getData().getBasketIpfsHash().equals(basketIpfsHash)) {
+                inputStateAndRef = stateAndRef;
+                break;
+            }
+        }
+        return inputStateAndRef;
+    }
+
+    public StateAndRef<ExchangeTradedFund> getIssuedEtfs(String etfCode) {
+
+        Set<Class<ExchangeTradedFund>> stateSet = new HashSet<>();
+        stateSet.add(ExchangeTradedFund.class);
+        EnumSet<Vault.StateStatus> stateStatus = EnumSet.of(Vault.StateStatus.ALL);
+
+//        Iterable<StateAndRef<SecurityBasket>> vaultStates = vaultService.queryBy(SecurityBasket.class);
+        Vault.Page<ExchangeTradedFund> result = vaultService.queryBy(ExchangeTradedFund.class);
+        Iterable<StateAndRef<ExchangeTradedFund>> vaultStates = result.getStates();
+
+        StateAndRef<ExchangeTradedFund> inputStateAndRef = null;
+
+        Iterator<StateAndRef<ExchangeTradedFund>> it;
+        it = vaultStates.iterator();
+        while (it.hasNext()) {
+            StateAndRef<ExchangeTradedFund> stateAndRef = it.next();
+            if (stateAndRef.getState().getData().getEtfCode().equals(etfCode)) {
                 inputStateAndRef = stateAndRef;
                 break;
             }

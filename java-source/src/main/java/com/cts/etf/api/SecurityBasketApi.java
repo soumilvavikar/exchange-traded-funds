@@ -2,6 +2,7 @@ package com.cts.etf.api;
 
 import com.cts.common.ApplicationPlugin;
 import com.cts.etf.SecurityBasket;
+import com.cts.etf.flows.IouSecurityBasketFlow;
 import com.cts.etf.flows.IssueSecurityBasketFlow;
 import com.google.common.collect.ImmutableMap;
 import net.corda.core.contracts.Amount;
@@ -86,6 +87,38 @@ public class SecurityBasketApi implements ApplicationPlugin {
             final FlowHandle<SignedTransaction> flowHandle = rpcOps.startFlowDynamic(
                     IssueSecurityBasketFlow.Initiator.class,
                     basketIpfsHash, myIdentity, false
+            );
+
+            final SignedTransaction result = flowHandle.getReturnValue().get();
+            final String msg = String.format("Transaction id %s committed to ledger.\n%s",
+                    result.getId(), result.getTx().getOutputStates().get(0));
+            return Response.status(CREATED).entity(msg).build();
+        } catch (Exception e) {
+            return Response.status(BAD_REQUEST).entity(e.getMessage()).build();
+        }
+    }
+
+    @GET
+    @Path("iou")
+    public Response iouSecurityBasket(
+            @QueryParam(value = "basketIpfsHash") String basketIpfsHash,
+            @QueryParam(value = "party") String party) {
+        // 1. Get party objects for the counterparty.
+        final Set<Party> lenderIdentities = rpcOps.partiesFromName(party, false);
+        if (lenderIdentities.size() != 1) {
+            final String errMsg = String.format("Found %d identities for the lender.", lenderIdentities.size());
+            throw new IllegalStateException(errMsg);
+        }
+        final Party lenderIdentity = lenderIdentities.iterator().next();
+
+        // 2. Create an amount object.
+        // final Amount issueAmount = new Amount<>((long) amount * 100, Currency.getInstance(currency));
+
+        // 3. Start the IssueObligation flow. We block and wait for the flow to return.
+        try {
+            final FlowHandle<SignedTransaction> flowHandle = rpcOps.startFlowDynamic(
+                    IouSecurityBasketFlow.Initiator.class,
+                    basketIpfsHash, lenderIdentity, false
             );
 
             final SignedTransaction result = flowHandle.getReturnValue().get();

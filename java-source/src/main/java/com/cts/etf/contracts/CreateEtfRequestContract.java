@@ -62,7 +62,7 @@ public class CreateEtfRequestContract implements Contract {
 
     // This only allows one ETF Creation Request per transaction.
     private void verifyIssue(LedgerTransaction tx, Set<PublicKey> signers) {
-
+        System.out.println("In verifyIssue.... ");
         requireThat(req -> {
             req.using("No inputs should be consumed when issuing an ETF Creation Request.",
                     tx.getInputStates().isEmpty());
@@ -70,6 +70,7 @@ public class CreateEtfRequestContract implements Contract {
             CreateEtfRequest createEtfRequest = (CreateEtfRequest) tx.getOutputStates().get(0);
             req.using("A newly issued ETF Creation Request must have a Security Basket ID.", createEtfRequest.getBasketIpfsHash() != null);
             req.using("A newly issued ETF Creation Request must have a Valid ETF Code.", createEtfRequest.getEtfCode() != null);
+            req.using("A newly issued ETF Creation Request must have a Valid Quantity.", createEtfRequest.getQuantity() > 0);
             req.using("The lender and borrower cannot be the same identity.", !createEtfRequest.getBorrower().equals(createEtfRequest.getLender()));
             req.using("Both lender and borrower together only may sign ETF Creation Request issue transaction.",
                     signers.equals(keysFromParticipants(createEtfRequest)));

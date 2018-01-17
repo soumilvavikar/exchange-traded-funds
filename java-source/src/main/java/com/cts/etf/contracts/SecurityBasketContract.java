@@ -65,7 +65,7 @@ public class SecurityBasketContract implements Contract {
             req.using("Only one securityBasket state should be created when issuing an securityBasket.", tx.getOutputStates().size() == 1);
             SecurityBasket securityBasket = (SecurityBasket) tx.getOutputStates().get(0);
             req.using("A newly issued securityBasket must have a Hash.", securityBasket.getBasketIpfsHash() != null);
-            req.using("The lender and borrower cannot be the same identity.", !securityBasket.getBorrower().equals(securityBasket.getLender()));
+            req.using("The lender and borrower must be the same identity.", securityBasket.getBorrower().equals(securityBasket.getLender()));
             req.using("Both lender and borrower together only may sign securityBasket issue transaction.",
                     signers.equals(keysFromParticipants(securityBasket)));
             return null;

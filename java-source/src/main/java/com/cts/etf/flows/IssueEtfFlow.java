@@ -1,11 +1,10 @@
 package com.cts.etf.flows;
 
 import co.paralleluniverse.fibers.Suspendable;
-import com.cts.etf.ETFContract;
+import com.cts.etf.contracts.ETFContract;
 import com.cts.etf.ExchangeTradedFund;
 import com.cts.etf.api.EtfApi;
 import net.corda.confidential.SwapIdentitiesFlow;
-import net.corda.core.contracts.Amount;
 import net.corda.core.flows.*;
 import net.corda.core.identity.AnonymousParty;
 import net.corda.core.identity.Party;
@@ -15,7 +14,6 @@ import net.corda.core.utilities.ProgressTracker;
 
 import java.security.PublicKey;
 import java.time.Duration;
-import java.util.Currency;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
@@ -27,19 +25,19 @@ public class IssueEtfFlow {
 		private static final Logger logger =
 				Logger.getLogger(EtfApi.class.toString());
 		private final String etfName;
-		private final Amount<Currency> etfValue;
+		private final String etfCode;
 		private final int quantityOfEtf;
 		private final Boolean anonymous;
 		private final Party buyer;
 		private final Party owner;
 
 		// Constructor
-		public Initiator(String etfName, Amount<Currency> etfValue, int
+		public Initiator(String etfName,String etfCode, int
 				numberOfEtf, Party buyer, Party owner,
 				Boolean
 						anonymous) {
 			this.etfName = etfName;
-			this.etfValue = etfValue;
+			this.etfCode = etfCode;
 			this.quantityOfEtf = numberOfEtf;
 			this.anonymous = anonymous;
 			this.buyer = buyer;
@@ -105,10 +103,10 @@ public class IssueEtfFlow {
 
 				final AnonymousParty anonymousMe = txKeys.get(getOurIdentity());
 				final AnonymousParty anonymousLender = txKeys.get(owner);
-				return new ExchangeTradedFund(etfValue, owner, buyer,
+				return new ExchangeTradedFund(etfCode, owner, buyer,
 						etfName, quantityOfEtf);
 			}
-			return new ExchangeTradedFund(etfValue, owner, buyer,
+			return new ExchangeTradedFund(etfCode, owner, buyer,
 					etfName, quantityOfEtf);
 		}
 

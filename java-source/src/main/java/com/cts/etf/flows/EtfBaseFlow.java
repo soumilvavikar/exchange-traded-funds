@@ -1,5 +1,6 @@
 package com.cts.etf.flows;
 
+import com.cts.etf.SecurityBasket;
 import com.google.common.collect.ImmutableList;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
@@ -27,18 +28,18 @@ public abstract class EtfBaseFlow  extends FlowLogic<SignedTransaction> {
         return notaries.get(0);
     }
 
-    StateAndRef<Obligation> getObligationByLinearId(UniqueIdentifier linearId) throws FlowException {
+    StateAndRef<SecurityBasket> getSecurityBasketByLinearId(UniqueIdentifier linearId) throws FlowException {
         QueryCriteria queryCriteria = new QueryCriteria.LinearStateQueryCriteria(
                 null,
                 ImmutableList.of(linearId),
                 Vault.StateStatus.UNCONSUMED,
                 null);
 
-        List<StateAndRef<Obligation>> obligations = getServiceHub().getVaultService().queryBy(Obligation.class, queryCriteria).getStates();
-        if (obligations.size() != 1) {
-            throw new FlowException(String.format("Obligation with id %s not found.", linearId));
+        List<StateAndRef<SecurityBasket>> securityBaskets = getServiceHub().getVaultService().queryBy(SecurityBasket.class, queryCriteria).getStates();
+        if (securityBaskets.size() != 1) {
+            throw new FlowException(String.format("SecurityBasket with id %s not found.", linearId));
         }
-        return obligations.get(0);
+        return securityBaskets.get(0);
     }
 
     Party resolveIdentity(AbstractParty abstractParty) {

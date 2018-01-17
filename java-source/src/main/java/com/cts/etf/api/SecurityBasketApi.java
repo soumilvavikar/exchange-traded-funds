@@ -3,16 +3,22 @@ package com.cts.etf.api;
 import com.cts.common.ApplicationPlugin;
 import com.cts.etf.SecurityBasket;
 import com.cts.etf.flows.IouSecurityBasketFlow;
+import com.cts.etf.flows.IouSecurityBasketSettleFlow;
 import com.cts.etf.flows.IssueSecurityBasketFlow;
 import com.google.common.collect.ImmutableMap;
 import net.corda.core.contracts.Amount;
 import net.corda.core.contracts.StateAndRef;
+import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.identity.Party;
 import net.corda.core.messaging.CordaRPCOps;
 import net.corda.core.messaging.FlowHandle;
 import net.corda.core.transactions.SignedTransaction;
+import net.corda.core.utilities.OpaqueBytes;
 import net.corda.examples.obligation.Obligation;
 import net.corda.examples.obligation.flows.IssueObligation;
+import net.corda.examples.obligation.flows.SettleObligation;
+import net.corda.finance.flows.AbstractCashFlow;
+import net.corda.finance.flows.CashIssueFlow;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -52,6 +58,19 @@ public class SecurityBasketApi implements ApplicationPlugin {
     public Response issueSecurityBasket(
             @QueryParam(value = "basketIpfsHash") String basketIpfsHash,
             @QueryParam(value = "party") String party) {
+
+        // 1. Prepare issue request.
+        final Amount<Currency> issueAmount = new Amount<>((long) 100 * 1, Currency.getInstance("INR"));
+        final List<Party> notaries = rpcOps.notaryIdentities();
+        if (notaries.isEmpty()) {
+            throw new IllegalStateException("Could not find a notary.");
+        }
+        final Party notary = notaries.get(0);
+        final OpaqueBytes issueRef = OpaqueBytes.of(new byte[1]);
+        final CashIssueFlow.IssueRequest issueRequest = new CashIssueFlow.IssueRequest(issueAmount, issueRef, notary);
+
+        // 2. Start flow and wait for response.
+        rpcOps.startFlowDynamic(CashIssueFlow.class, issueRequest);
 
         // 1. Get party objects for the counterparty.
         final Set<Party> lenderIdentities = rpcOps.partiesFromName(party, false);
@@ -106,6 +125,27 @@ public class SecurityBasketApi implements ApplicationPlugin {
             final SignedTransaction result = flowHandle.getReturnValue().get();
             final String msg = String.format("Transaction id %s committed to ledger.\n%s",
                     result.getId(), result.getTx().getOutputStates().get(0));
+            return Response.status(CREATED).entity(msg).build();
+        } catch (Exception e) {
+            return Response.status(BAD_REQUEST).entity(e.getMessage()).build();
+        }
+    }
+
+    @GET
+    @Path("settle-iou")
+    public Response settleObligation(
+            @QueryParam(value = "id") String id,
+            @QueryParam(value = "basketIpfsHash") String basketIpfsHash) {
+        UniqueIdentifier linearId = UniqueIdentifier.Companion.fromString(id);
+        // Amount<Currency> settleAmount = new Amount<>((long) amount * 100, Currency.getInstance(currency));
+
+        try {
+            final FlowHandle flowHandle = rpcOps.startFlowDynamic(
+                    IouSecurityBasketSettleFlow.Initiator.class,
+                    linearId, basketIpfsHash, true);
+
+            flowHandle.getReturnValue().get();
+            final String msg = String.format("%s paid off on Security Basket IOU id %s.", basketIpfsHash, id);
             return Response.status(CREATED).entity(msg).build();
         } catch (Exception e) {
             return Response.status(BAD_REQUEST).entity(e.getMessage()).build();

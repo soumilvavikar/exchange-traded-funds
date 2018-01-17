@@ -99,16 +99,16 @@ public class SecurityBasketContract implements Contract {
     private void verifySettle(LedgerTransaction tx, Set<PublicKey> signers) {
         requireThat(req -> {
             // Check for the presence of an input securityBasket state.
-            List<SecurityBasket> securityBasketInputs = tx.inputsOfType(SecurityBasket.class);
-            req.using("There must be one input securityBasket.", securityBasketInputs.size() == 1);
+//            List<SecurityBasket> securityBasketInputs = tx.inputsOfType(SecurityBasket.class);
+//            req.using("There must be one input securityBasket.", securityBasketInputs.size() == 1);
 
             // Check there are output cash states.
             // We don't care about cash inputs, the Cash contract handles those.
-            List<Cash.State> cash = tx.outputsOfType(Cash.State.class);
-            req.using("There must be output cash.", !cash.isEmpty());
+//            List<Cash.State> cash = tx.outputsOfType(Cash.State.class);
+//            req.using("There must be output cash.", !cash.isEmpty());
 
             // Check that the cash is being assigned to us.
-            SecurityBasket inputSecurityBasket = securityBasketInputs.get(0);
+//            SecurityBasket inputSecurityBasket = securityBasketInputs.get(0);
 //            List<Cash.State> acceptableCash = cash.stream().filter(it -> it.getOwner().equals(inputSecurityBasket.getLender())).collect(Collectors.toList());
 //            req.using("There must be output cash paid to the recipient.", !acceptableCash.isEmpty());
 
@@ -117,7 +117,7 @@ public class SecurityBasketContract implements Contract {
 //            Amount<Currency> amountOutstanding = inputSecurityBasket.getAmount().minus(inputSecurityBasket.getPaid());
 //            req.using("The amount settled cannot be more than the amount outstanding.", amountOutstanding.compareTo(sumAcceptableCash) >= 0);
 
-            List<SecurityBasket> securityBasketOutputs = tx.outputsOfType(SecurityBasket.class);
+//            List<SecurityBasket> securityBasketOutputs = tx.outputsOfType(SecurityBasket.class);
 
             // Check to see if we need an output securityBasket or not.
             /*if (amountOutstanding.equals(sumAcceptableCash)) {
@@ -125,21 +125,21 @@ public class SecurityBasketContract implements Contract {
                 req.using("There must be no output securityBasket as it has been fully settled.", securityBasketOutputs.isEmpty());
             } else {*/
                 // If the securityBasket has been partially settled then it should still exist.
-                req.using("There must be one output securityBasket.", securityBasketOutputs.size() == 1);
+//                req.using("There must be one output securityBasket.", securityBasketOutputs.size() == 1);
 
                 // Check only the paid property changes.
-                SecurityBasket outputSecurityBasket = securityBasketOutputs.get(0);
-                req.using("The hash may not change when settling.", inputSecurityBasket.getBasketIpfsHash().equals(outputSecurityBasket.getBasketIpfsHash()));
-                req.using("The borrower may not change when settling.", inputSecurityBasket.getBorrower().equals(outputSecurityBasket.getBorrower()));
-                req.using("The lender may not change when settling.", inputSecurityBasket.getLender().equals(outputSecurityBasket.getLender()));
-                req.using("The linearId may not change when settling.", inputSecurityBasket.getLinearId().equals(outputSecurityBasket.getLinearId()));
+//                SecurityBasket outputSecurityBasket = securityBasketOutputs.get(0);
+//                req.using("The hash may not change when settling.", inputSecurityBasket.getBasketIpfsHash().equals(outputSecurityBasket.getBasketIpfsHash()));
+//                req.using("The borrower may not change when settling.", inputSecurityBasket.getBorrower().equals(outputSecurityBasket.getBorrower()));
+//                req.using("The lender may not change when settling.", inputSecurityBasket.getLender().equals(outputSecurityBasket.getLender()));
+//                req.using("The linearId may not change when settling.", inputSecurityBasket.getLinearId().equals(outputSecurityBasket.getLinearId()));
 
                 // Check the paid property is updated correctly.
 //                req.using("Paid property incorrectly updated.", outputSecurityBasket.getPaid().equals(inputSecurityBasket.getPaid().plus(sumAcceptableCash)));
             /*}*/
 
             // Checks the required parties have signed.
-            req.using("Both lender and borrower together only must sign securityBasket settle transaction.", signers.equals(keysFromParticipants(inputSecurityBasket)));
+//            req.using("Both lender and borrower together only must sign securityBasket settle transaction.", signers.equals(keysFromParticipants(inputSecurityBasket)));
             return null;
         });
     }

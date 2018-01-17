@@ -92,7 +92,7 @@ public class SecurityBasket implements LinearState {
             borrowerString = toBase58String(borrowerKey);
         }
 
-        return String.format("Security Basket(%s): %s%s has got Security Basket with a %s.",
+        return String.format("Security Basket(%s): %s :: %s has got Security Basket with Key:: %s.",
                 this.linearId, borrowerString, lenderString, this.basketIpfsHash);
     }
 

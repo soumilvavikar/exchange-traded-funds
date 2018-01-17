@@ -22,6 +22,8 @@ public class ExchangeTradedFund implements LinearState {
 	private final UniqueIdentifier linearId;
 	private final String etfName;
 	private final int quantity;
+	private final Amount<Currency> faceValue =
+			new Amount<>((long) 100, Currency.getInstance("USD"));
 
 	public ExchangeTradedFund(String etfCode,
 			AbstractParty owner,
@@ -30,6 +32,7 @@ public class ExchangeTradedFund implements LinearState {
 		this.etfCode = etfCode;
 		this.owner = owner;
 		this.buyer = buyer;
+
 		this.linearId = linearId;
 		this.etfName = etfName;
 		this.quantity = quantity;
@@ -81,7 +84,6 @@ public class ExchangeTradedFund implements LinearState {
 		this.etfName = etfName;
 		this.quantity = quantity;
 
-
 		this.linearId = new UniqueIdentifier();
 	}
 
@@ -103,6 +105,10 @@ public class ExchangeTradedFund implements LinearState {
 
 	public int getQuantity() {
 		return quantity;
+	}
+
+	public Amount<Currency> getFaceValue() {
+		return faceValue;
 	}
 
 	@NotNull

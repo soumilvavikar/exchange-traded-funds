@@ -29,14 +29,14 @@ public class InfoApi implements ApplicationPlugin {
 	@Path("me")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Map<String, Party> me() {
-		return ImmutableMap.of("Me: ", myIdentity);
+		return ImmutableMap.of("data", myIdentity);
 	}
 
 	@GET
 	@Path("peers")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Map<String, List<String>> peers() {
-		return ImmutableMap.of("My Peers: ", rpcOps.networkMapSnapshot()
+		return ImmutableMap.of("data", rpcOps.networkMapSnapshot()
 				.stream()
 				.filter(nodeInfo -> nodeInfo.getLegalIdentities().get(0) != myIdentity)
 				.map(it -> it.getLegalIdentities().get(0).getName().getOrganisation())

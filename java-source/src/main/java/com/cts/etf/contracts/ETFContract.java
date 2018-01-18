@@ -59,12 +59,18 @@ public class ETFContract implements Contract {
 			// verifyTransfer(tx, setOfSigners);
 		}
 		else if (commandData instanceof ETFContract.Commands.Settle) {
-			// TODO
-			// verifySettle(tx, setOfSigners);
+			verifySettle(tx, setOfSigners);
 		}
 		else {
 			throw new IllegalArgumentException("Unrecognised command.");
 		}
+	}
+
+	private void verifySettle(LedgerTransaction tx,
+			Set<PublicKey> setOfSigners) {
+		requireThat(req -> {
+			return null;
+		});
 	}
 
 	private void verifyIou(LedgerTransaction tx, Set<PublicKey> setOfSigners) {

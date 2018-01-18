@@ -38,117 +38,137 @@ import static javax.ws.rs.core.Response.Status.CREATED;
 @Path("security-basket")
 public class SecurityBasketApi implements ApplicationPlugin {
 
-    private final CordaRPCOps rpcOps;
-    private final Party myIdentity;
+	private final CordaRPCOps rpcOps;
+	private final Party myIdentity;
 
-    public SecurityBasketApi(CordaRPCOps rpcOps) {
-        this.rpcOps = rpcOps;
-        this.myIdentity = rpcOps.nodeInfo().getLegalIdentities().get(0);
-    }
+	public SecurityBasketApi(CordaRPCOps rpcOps) {
+		this.rpcOps = rpcOps;
+		this.myIdentity = rpcOps.nodeInfo().getLegalIdentities().get(0);
+	}
 
-    @GET
-    @Path("get")
-    @Produces(MediaType.APPLICATION_JSON)
-    public List<StateAndRef<SecurityBasket>> securityBaskets() {
-        return rpcOps.vaultQuery(SecurityBasket.class).getStates();
-    }
+	@GET
+	@Path("get")
+	@Produces(MediaType.APPLICATION_JSON)
+	public List<StateAndRef<SecurityBasket>> securityBaskets() {
+		return rpcOps.vaultQuery(SecurityBasket.class).getStates();
+	}
 
-    @GET
-    @Path("issue")
-    public Response issueSecurityBasket(
-            @QueryParam(value = "basketIpfsHash") String basketIpfsHash,
-            @QueryParam(value = "party") String party) {
+	@GET
+	@Path("issue")
+	public Response issueSecurityBasket(
+			@QueryParam(value = "basketIpfsHash") String basketIpfsHash,
+			@QueryParam(value = "party") String party) {
 
-        // 1. Prepare issue request.
-        final Amount<Currency> issueAmount = new Amount<>((long) 100 * 1, Currency.getInstance("INR"));
-        final List<Party> notaries = rpcOps.notaryIdentities();
-        if (notaries.isEmpty()) {
-            throw new IllegalStateException("Could not find a notary.");
-        }
-        final Party notary = notaries.get(0);
-        final OpaqueBytes issueRef = OpaqueBytes.of(new byte[1]);
-        final CashIssueFlow.IssueRequest issueRequest = new CashIssueFlow.IssueRequest(issueAmount, issueRef, notary);
+		// 1. Get party objects for the counterparty.
+		final Set<Party> lenderIdentities =
+				rpcOps.partiesFromName(party, false);
+		if (lenderIdentities.size() != 1) {
+			final String errMsg =
+					String.format("Found %d identities for the lender.",
+							lenderIdentities.size());
+			throw new IllegalStateException(errMsg);
+		}
+		final Party lenderIdentity = lenderIdentities.iterator().next();
 
-        // 2. Start flow and wait for response.
-        rpcOps.startFlowDynamic(CashIssueFlow.class, issueRequest);
+		// 2. Create an amount object.
+		selfIssue();
 
-        // 1. Get party objects for the counterparty.
-        final Set<Party> lenderIdentities = rpcOps.partiesFromName(party, false);
-        if (lenderIdentities.size() != 1) {
-            final String errMsg = String.format("Found %d identities for the lender.", lenderIdentities.size());
-            throw new IllegalStateException(errMsg);
-        }
-        final Party lenderIdentity = lenderIdentities.iterator().next();
+		// 3. Start the IssueObligation flow. We block and wait for the flow to return.
+		try {
+			final FlowHandle<SignedTransaction> flowHandle =
+					rpcOps.startFlowDynamic(
+							IssueSecurityBasketFlow.Initiator.class,
+							basketIpfsHash, myIdentity, false
+					);
 
-        // 2. Create an amount object.
-        // final Amount issueAmount = new Amount<>((long) amount * 100, Currency.getInstance(currency));
+			final SignedTransaction result = flowHandle.getReturnValue().get();
+			final String msg =
+					String.format("Transaction id %s committed to ledger.\n%s",
+							result.getId(),
+							result.getTx().getOutputStates().get(0));
+			return Response.status(CREATED).entity(msg).build();
+		}
+		catch (Exception e) {
+			return Response.status(BAD_REQUEST).entity(e.getMessage()).build();
+		}
+	}
 
-        // 3. Start the IssueObligation flow. We block and wait for the flow to return.
-        try {
-            final FlowHandle<SignedTransaction> flowHandle = rpcOps.startFlowDynamic(
-                    IssueSecurityBasketFlow.Initiator.class,
-                    basketIpfsHash, myIdentity, false
-            );
+	@GET
+	@Path("iou")
+	public Response iouSecurityBasket(
+			@QueryParam(value = "basketIpfsHash") String basketIpfsHash,
+			@QueryParam(value = "party") String party) {
+		// 1. Get party objects for the counterparty.
+		final Set<Party> lenderIdentities =
+				rpcOps.partiesFromName(party, false);
+		if (lenderIdentities.size() != 1) {
+			final String errMsg =
+					String.format("Found %d identities for the lender.",
+							lenderIdentities.size());
+			throw new IllegalStateException(errMsg);
+		}
+		final Party lenderIdentity = lenderIdentities.iterator().next();
 
-            final SignedTransaction result = flowHandle.getReturnValue().get();
-            final String msg = String.format("Transaction id %s committed to ledger.\n%s",
-                    result.getId(), result.getTx().getOutputStates().get(0));
-            return Response.status(CREATED).entity(msg).build();
-        } catch (Exception e) {
-            return Response.status(BAD_REQUEST).entity(e.getMessage()).build();
-        }
-    }
+		// 2. Create an amount object.
+		// final Amount issueAmount = new Amount<>((long) amount * 100, Currency.getInstance(currency));
 
-    @GET
-    @Path("iou")
-    public Response iouSecurityBasket(
-            @QueryParam(value = "basketIpfsHash") String basketIpfsHash,
-            @QueryParam(value = "party") String party) {
-        // 1. Get party objects for the counterparty.
-        final Set<Party> lenderIdentities = rpcOps.partiesFromName(party, false);
-        if (lenderIdentities.size() != 1) {
-            final String errMsg = String.format("Found %d identities for the lender.", lenderIdentities.size());
-            throw new IllegalStateException(errMsg);
-        }
-        final Party lenderIdentity = lenderIdentities.iterator().next();
+		// 3. Start the IssueObligation flow. We block and wait for the flow to return.
+		try {
+			final FlowHandle<SignedTransaction> flowHandle =
+					rpcOps.startFlowDynamic(
+							IouSecurityBasketFlow.Initiator.class,
+							basketIpfsHash, lenderIdentity, false
+					);
 
-        // 2. Create an amount object.
-        // final Amount issueAmount = new Amount<>((long) amount * 100, Currency.getInstance(currency));
+			final SignedTransaction result = flowHandle.getReturnValue().get();
+			final String msg =
+					String.format("Transaction id %s committed to ledger.\n%s",
+							result.getId(),
+							result.getTx().getOutputStates().get(0));
+			return Response.status(CREATED).entity(msg).build();
+		}
+		catch (Exception e) {
+			return Response.status(BAD_REQUEST).entity(e.getMessage()).build();
+		}
+	}
 
-        // 3. Start the IssueObligation flow. We block and wait for the flow to return.
-        try {
-            final FlowHandle<SignedTransaction> flowHandle = rpcOps.startFlowDynamic(
-                    IouSecurityBasketFlow.Initiator.class,
-                    basketIpfsHash, lenderIdentity, false
-            );
+	@GET
+	@Path("settle-iou")
+	public Response settleSecurityBasketIou(
+			@QueryParam(value = "id") String id,
+			@QueryParam(value = "basketIpfsHash") String basketIpfsHash) {
+		UniqueIdentifier linearId = UniqueIdentifier.Companion.fromString(id);
 
-            final SignedTransaction result = flowHandle.getReturnValue().get();
-            final String msg = String.format("Transaction id %s committed to ledger.\n%s",
-                    result.getId(), result.getTx().getOutputStates().get(0));
-            return Response.status(CREATED).entity(msg).build();
-        } catch (Exception e) {
-            return Response.status(BAD_REQUEST).entity(e.getMessage()).build();
-        }
-    }
+		try {
+			final FlowHandle flowHandle = rpcOps.startFlowDynamic(
+					IouSecurityBasketSettleFlow.Initiator.class,
+					linearId, basketIpfsHash, true);
 
-    @GET
-    @Path("settle-iou")
-    public Response settleObligation(
-            @QueryParam(value = "id") String id,
-            @QueryParam(value = "basketIpfsHash") String basketIpfsHash) {
-        UniqueIdentifier linearId = UniqueIdentifier.Companion.fromString(id);
-        // Amount<Currency> settleAmount = new Amount<>((long) amount * 100, Currency.getInstance(currency));
+			flowHandle.getReturnValue().get();
+			final String msg =
+					String.format("%s paid off on Security Basket IOU id %s.",
+							basketIpfsHash, id);
+			return Response.status(CREATED).entity(msg).build();
+		}
+		catch (Exception e) {
+			return Response.status(BAD_REQUEST).entity(e.getMessage()).build();
+		}
+	}
 
-        try {
-            final FlowHandle flowHandle = rpcOps.startFlowDynamic(
-                    IouSecurityBasketSettleFlow.Initiator.class,
-                    linearId, basketIpfsHash, true);
+	private void selfIssue() {
+		// 1. Prepare issue request.
+		final Amount<Currency> issueAmount =
+				new Amount<>((long) 100 * 1, Currency.getInstance("INR"));
+		final List<Party> notaries = rpcOps.notaryIdentities();
+		if (notaries.isEmpty()) {
+			throw new IllegalStateException("Could not find a notary.");
+		}
+		final Party notary = notaries.get(0);
+		final OpaqueBytes issueRef = OpaqueBytes.of(new byte[1]);
+		final CashIssueFlow.IssueRequest issueRequest =
+				new CashIssueFlow.IssueRequest(issueAmount, issueRef, notary);
 
-            flowHandle.getReturnValue().get();
-            final String msg = String.format("%s paid off on Security Basket IOU id %s.", basketIpfsHash, id);
-            return Response.status(CREATED).entity(msg).build();
-        } catch (Exception e) {
-            return Response.status(BAD_REQUEST).entity(e.getMessage()).build();
-        }
-    }
+		// 2. Start flow and wait for response.
+		rpcOps.startFlowDynamic(CashIssueFlow.class, issueRequest);
+	}
 }

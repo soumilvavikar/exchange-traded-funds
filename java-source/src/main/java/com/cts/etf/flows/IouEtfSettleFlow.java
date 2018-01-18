@@ -81,9 +81,6 @@ public class IouEtfSettleFlow {
 					resolveIdentity(inputEtf.getBuyer());
 			final Party sponsorer =
 					resolveIdentity(inputEtf.getOwner());
-			System.out.println("AP Name: " + authorizedParticipant.getName());
-			System.out.println("My identity: " + getOurIdentity().getName
-					());
 			// Stage 3. This flow can only be initiated by the current recipient.
 			if (!sponsorer.equals(getOurIdentity())) {
 				throw new FlowException(

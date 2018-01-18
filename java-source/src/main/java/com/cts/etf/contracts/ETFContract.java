@@ -37,7 +37,7 @@ public class ETFContract implements Contract {
 				ETFContract.Commands {
 		}
 
-		class Iou implements ETFContract.Commands {
+		class Iou extends TypeOnlyCommandData implements ETFContract.Commands {
 		}
 	}
 

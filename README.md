@@ -8,6 +8,7 @@ Sponsorer APIs -
 issueETF - http://localhost:10010/api/etf/issue?etfName=GlobalFinancialsETF&quantity=10&etfCode=etf123
 getEtf - http://localhost:10010/api/etf/get
 iou - http://localhost:10010/api/etf/iou?etfName=GlobalFinancialsETF1&quantity=10&etfCode=etf123&party=AuthorizedParticipant
+settle-iou - http://localhost:10010/api/etf/settle-iou?etfCode=etf44&etfHash=a3dd180d-7d0b-4052-a8b4-8457025fab4e
 
 Authorized Participant APIs -
 issueBasket - http://localhost:10007/api/security-basket/issue?basketIpfsHash=soumil12334&party=AuthorizedParticipant

@@ -3,9 +3,12 @@ package com.cts.etf.api;
 import com.cts.common.ApplicationPlugin;
 import com.cts.etf.ExchangeTradedFund;
 import com.cts.etf.flows.IouEtfFlow;
+import com.cts.etf.flows.IouEtfSettleFlow;
+import com.cts.etf.flows.IouSecurityBasketSettleFlow;
 import com.cts.etf.flows.IssueEtfFlow;
 import net.corda.core.contracts.Amount;
 import net.corda.core.contracts.StateAndRef;
+import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.identity.Party;
 import net.corda.core.messaging.CordaRPCOps;
 import net.corda.core.messaging.FlowHandle;
@@ -117,6 +120,29 @@ public class EtfApi implements ApplicationPlugin {
 							result.getTx().getOutputStates().get(0));
 			logger.info("Sending response: " + msg);
 
+			return Response.status(CREATED).entity(msg).build();
+		}
+		catch (Exception e) {
+			return Response.status(BAD_REQUEST).entity(e.getMessage()).build();
+		}
+	}
+
+	@GET
+	@Path("settle-iou")
+	public Response settleEtfIou(
+			@QueryParam(value = "etfCode") String etfCode,
+			@QueryParam(value = "etfHash") String etfHash) {
+		UniqueIdentifier linearId = UniqueIdentifier.Companion.fromString(etfHash);
+
+		try {
+			final FlowHandle flowHandle = rpcOps.startFlowDynamic(
+					IouEtfSettleFlow.Initiator.class,
+					linearId, etfCode, true);
+
+			flowHandle.getReturnValue().get();
+			final String msg =
+					String.format("ETF IOU settled. EtfId: " +
+							etfHash);
 			return Response.status(CREATED).entity(msg).build();
 		}
 		catch (Exception e) {

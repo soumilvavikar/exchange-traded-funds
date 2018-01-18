@@ -37,7 +37,7 @@ public class ETFContract implements Contract {
 				ETFContract.Commands {
 		}
 
-		class Iou implements ETFContract.Commands {
+		class Iou extends TypeOnlyCommandData implements ETFContract.Commands {
 		}
 	}
 
@@ -59,12 +59,18 @@ public class ETFContract implements Contract {
 			// verifyTransfer(tx, setOfSigners);
 		}
 		else if (commandData instanceof ETFContract.Commands.Settle) {
-			// TODO
-			// verifySettle(tx, setOfSigners);
+			verifySettle(tx, setOfSigners);
 		}
 		else {
 			throw new IllegalArgumentException("Unrecognised command.");
 		}
+	}
+
+	private void verifySettle(LedgerTransaction tx,
+			Set<PublicKey> setOfSigners) {
+		requireThat(req -> {
+			return null;
+		});
 	}
 
 	private void verifyIou(LedgerTransaction tx, Set<PublicKey> setOfSigners) {

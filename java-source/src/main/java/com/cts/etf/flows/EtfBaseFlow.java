@@ -1,5 +1,6 @@
 package com.cts.etf.flows;
 
+import com.cts.etf.ExchangeTradedFund;
 import com.cts.etf.SecurityBasket;
 import com.google.common.collect.ImmutableList;
 import net.corda.core.contracts.StateAndRef;
@@ -18,42 +19,73 @@ import net.corda.examples.obligation.Obligation;
 
 import java.util.List;
 
-public abstract class EtfBaseFlow  extends FlowLogic<SignedTransaction> {
+public abstract class EtfBaseFlow extends FlowLogic<SignedTransaction> {
 
-    Party getFirstNotary() throws FlowException {
-        List<Party> notaries = getServiceHub().getNetworkMapCache().getNotaryIdentities();
-        if (notaries.isEmpty()) {
-            throw new FlowException("No available notary.");
-        }
-        return notaries.get(0);
-    }
+	Party getFirstNotary() throws FlowException {
+		List<Party> notaries =
+				getServiceHub().getNetworkMapCache().getNotaryIdentities();
+		if (notaries.isEmpty()) {
+			throw new FlowException("No available notary.");
+		}
+		return notaries.get(0);
+	}
 
-    StateAndRef<SecurityBasket> getSecurityBasketByLinearId(UniqueIdentifier linearId) throws FlowException {
-        QueryCriteria queryCriteria = new QueryCriteria.LinearStateQueryCriteria(
-                null,
-                ImmutableList.of(linearId),
-                Vault.StateStatus.UNCONSUMED,
-                null);
+	StateAndRef<SecurityBasket> getSecurityBasketByLinearId(UniqueIdentifier linearId)
+			throws FlowException {
+		QueryCriteria queryCriteria =
+				new QueryCriteria.LinearStateQueryCriteria(
+						null,
+						ImmutableList.of(linearId),
+						Vault.StateStatus.UNCONSUMED,
+						null);
 
-        List<StateAndRef<SecurityBasket>> securityBaskets = getServiceHub().getVaultService().queryBy(SecurityBasket.class, queryCriteria).getStates();
-        if (securityBaskets.size() != 1) {
-            throw new FlowException(String.format("SecurityBasket with id %s not found.", linearId));
-        }
-        return securityBaskets.get(0);
-    }
+		List<StateAndRef<SecurityBasket>> securityBaskets =
+				getServiceHub().getVaultService()
+						.queryBy(SecurityBasket.class, queryCriteria)
+						.getStates();
+		if (securityBaskets.size() != 1) {
+			throw new FlowException(
+					String.format("SecurityBasket with id %s not found.",
+							linearId));
+		}
+		return securityBaskets.get(0);
+	}
 
-    Party resolveIdentity(AbstractParty abstractParty) {
-        return getServiceHub().getIdentityService().requireWellKnownPartyFromAnonymous(abstractParty);
-    }
+	StateAndRef<ExchangeTradedFund> getEtfByLinearId(UniqueIdentifier linearId)
+			throws FlowException {
+		QueryCriteria queryCriteria =
+				new QueryCriteria.LinearStateQueryCriteria(
+						null,
+						ImmutableList.of(linearId),
+						Vault.StateStatus.UNCONSUMED,
+						null);
 
-    static class SignTxFlowNoChecking extends SignTransactionFlow {
-        SignTxFlowNoChecking(FlowSession otherFlow, ProgressTracker progressTracker) {
-            super(otherFlow, progressTracker);
-        }
+		List<StateAndRef<ExchangeTradedFund>> etfs =
+				getServiceHub().getVaultService()
+						.queryBy(ExchangeTradedFund.class, queryCriteria)
+						.getStates();
+		if (etfs.size() != 1) {
+			throw new FlowException(
+					String.format("ExchangeTradedFund with id %s not found.",
+							linearId));
+		}
+		return etfs.get(0);
+	}
 
-        @Override
-        protected void checkTransaction(SignedTransaction tx) {
-            // TODO: Add checking here.
-        }
-    }
+	Party resolveIdentity(AbstractParty abstractParty) {
+		return getServiceHub().getIdentityService()
+				.requireWellKnownPartyFromAnonymous(abstractParty);
+	}
+
+	static class SignTxFlowNoChecking extends SignTransactionFlow {
+		SignTxFlowNoChecking(FlowSession otherFlow,
+				ProgressTracker progressTracker) {
+			super(otherFlow, progressTracker);
+		}
+
+		@Override
+		protected void checkTransaction(SignedTransaction tx) {
+			// TODO: Add checking here.
+		}
+	}
 }

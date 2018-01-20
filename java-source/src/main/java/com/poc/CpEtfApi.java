@@ -69,7 +69,7 @@ public class CpEtfApi  implements ApplicationPlugin {
             @QueryParam(value = "etfCode") String etfCode,
             @QueryParam(value = "party") String party) {
         // 1. Get party objects for the counterparty.
-        final Set<Party> newOwners = rpcOps.partiesFromName(party, false);
+        final Set<Party> newOwners = rpcOps.partiesFromName(party, true);
         if (newOwners.size() != 1) {
             final String errMsg = String.format("Found %d identities for the lender.", newOwners.size());
             throw new IllegalStateException(errMsg);

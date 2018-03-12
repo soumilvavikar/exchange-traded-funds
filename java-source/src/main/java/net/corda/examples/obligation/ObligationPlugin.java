@@ -16,7 +16,7 @@ public class ObligationPlugin implements WebServerPluginRegistry {
 	private final List<Function<CordaRPCOps, ?>> webApis =
 			ImmutableList.of(SecurityBasketApi::new, EtfApi::new,
 					ObligationApi::new, CreateEtfApi::new,
-					NotaryReviewApi::new, InfoApi::new);
+					NotaryReviewApi::new, InfoApi::new, CpEtfApi::new, CpBasketApi::new);
 
 	private final Map<String, String> staticServeDirs = ImmutableMap.of(
 			"obligation",
